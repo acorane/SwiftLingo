@@ -1,0 +1,1 @@
+- [SwiftLingo architecture](swiftlingo-arch.md) — JWT auth, chat gating, 10% fee, dev login quirks, API codegen flow

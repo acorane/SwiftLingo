@@ -1,0 +1,235 @@
+SwiftLingo — Telegram Mini App MVP
+
+Build a Telegram Mini App marketplace for translation jobs. Keep the product lean and do not add extra features beyond what is explicitly described here.
+
+Goal
+SwiftLingo connects clients who need translation work with freelance translators. Users operate inside a Telegram Mini App with a clean mobile-first interface.
+
+Core Requirements
+- Do NOT build Telegram bot commands for MVP.
+- The Mini App must handle all user-facing actions.
+- Keep the UI simple and close to a standard marketplace flow.
+- Do not add unnecessary dashboards, analytics, subscriptions, AI features, CRM tools, or complex moderation systems.
+
+Authentication
+- Users authenticate through Telegram Mini App authentication.
+- Store telegram_id, username, first_name, last_name, and profile_photo_url.
+- No email/password signup system.
+
+Languages
+- The entire app must support 3 languages:
+  - English
+  - Uzbek
+  - Russian
+- A language switcher must be visible in the header on every page.
+- All UI text, buttons, forms, validation messages, notifications, labels, errors, and status texts must be translated.
+- The selected language must persist across sessions.
+
+User Roles
+1. Client
+   - Post jobs
+   - Browse translators’ bids
+   - Accept a translator
+   - Pay for the job
+   - Review completed work
+   - Leave ratings and feedback
+
+2. Translator
+   - Create a translator profile
+   - Apply to become a translator
+   - Accept platform terms and conditions
+   - Browse jobs
+   - Submit bids
+   - Receive approved contracts
+   - Deliver work
+   - Receive payout after completion
+
+Pages / Screens
+1. Home / Dashboard
+   - Active jobs
+   - Active contracts
+   - Completed jobs
+   - Notifications
+   - Recent activity
+
+2. Jobs List
+   - Search jobs by title and keywords
+   - Filter by source language, target language, specialization, budget, and delivery type
+   - Show job title, languages, word count, budget range, bids count, and specialization
+
+3. Job Detail
+   - Full job description
+   - Language pair
+   - Word count
+   - Budget
+   - Delivery type
+   - Specialization
+   - Bid submission form for translators
+   - Bid comparison for clients
+
+4. Post Job
+   - Title
+   - Source language
+   - Target language
+   - Description
+   - Word count
+   - Budget minimum
+   - Budget maximum
+   - Delivery type
+   - Specialization
+   - Upload source files if needed
+
+5. Contract / Chat
+   - Active contracts list
+   - Contract detail view
+   - Real-time chat between client and translator
+   - File sharing
+   - Contract status bar
+   - Job title
+   - Agreed price
+   - Payment status
+   - Delivery status
+
+6. Profile
+   - Avatar
+   - Name
+   - Role badge
+   - Stats
+   - Translator profile fields
+   - Rating
+   - Completed jobs
+   - Bid history
+   - Contract history
+
+Translator Application Flow
+- When a user switches to Translator mode for the first time, they must complete a translator application.
+- The application must include:
+  - Full name
+  - Bio
+  - Certifications
+  - Years of experience
+  - Price per word
+  - Source languages
+  - Target languages
+  - Specializations
+- The translator must read and accept the Terms & Conditions before submitting.
+- The application status must be one of:
+  - Draft
+  - Pending Approval
+  - Approved
+  - Rejected
+- Only approved translators can bid on jobs.
+
+Translator Terms & Conditions
+- Translators agree that SwiftLingo may retain a 10% platform fee from each completed contract.
+- Translators agree not to bypass the platform by moving work off-platform before completion.
+- Translators agree to communicate professionally and deliver work according to the agreed deadline.
+- Acceptance of the terms must be stored in the database with timestamp.
+
+Job and Contract Flow
+1. Client posts a job.
+2. Translators submit bids.
+3. Client chooses a translator.
+4. Client must pay before work begins.
+5. Payment is held by the platform until delivery is approved.
+6. Chat stays locked until payment is confirmed.
+7. Admin reviews and approves translator applications only.
+8. Translator receives work.
+9. Translator delivers work.
+10. Client approves delivery.
+11. Platform releases payment minus the 10% fee.
+
+Payment Requirements
+- Platform fee: 10%
+- Translator receives: 90%
+- Platform keeps: 10%
+- Payment must happen inside the app flow before the contract becomes active.
+- Use a simple escrow-style logic:
+  - Payment is captured first
+  - Contract becomes active only after payment succeeds
+  - Translator payout is released after client approval
+- Do not implement a complex escrow banking system for MVP.
+- Keep payment logic simple, reliable, and easy to maintain.
+- Make the platform fee configurable.
+
+Payment Statuses
+- Pending Payment
+- Payment Confirmed
+- Active
+- Delivered
+- Completed
+- Cancelled
+- Disputed
+
+Chat Rules
+- Chat must be disabled until payment is confirmed.
+- Do not show sensitive contact details before payment.
+- Keep all communication inside the platform until the contract is active.
+- Allow file uploads in chat after payment is confirmed.
+
+Reviews
+- After completion, clients can rate translators from 1 to 5 stars.
+- Clients can leave written feedback.
+- Translator rating and completed job count must appear on the profile.
+
+Notifications
+- New bid received
+- Bid accepted
+- Payment received
+- Contract activated
+- New message
+- Delivery submitted
+- Delivery approved
+- Translator application submitted
+- Translator application approved or rejected
+
+Database Tables
+- users
+- translator_profiles
+- translator_applications
+- jobs
+- bids
+- contracts
+- messages
+- reviews
+- notifications
+- payments
+- transactions
+- payouts
+- contract_status_history
+
+Permissions
+- Clients can only edit their own jobs.
+- Translators can only edit their own profiles and bids.
+- Users can only access contracts they are part of.
+- Admin can view and manage all records.
+- Only approved translators can bid.
+
+Admin Settings
+- ADMIN_TELEGRAM_USERNAME
+- PLATFORM_FEE_PERCENT = 10
+- DEFAULT_LANGUAGE = en
+
+UI / UX Rules
+- Mobile-first design
+- Clean marketplace layout
+- Simple navigation
+- Light and dark mode support
+- Use Telegram-friendly styling
+- Keep the app fast and lightweight
+
+Technical Stack
+- Frontend: React + Vite + Tailwind CSS
+- Backend: Node.js + Express
+- Database: Supabase PostgreSQL
+- Hosting: Vercel for app and API
+- Storage: Supabase storage or equivalent for uploaded files
+
+MVP Non-Goals
+- No Telegram bot command system
+- No complex escrow infrastructure
+- No subscription system
+- No AI tools
+- No advanced dispute arbitration system
+- No unnecessary admin approval for every contract
+- No extra features beyond the product described above

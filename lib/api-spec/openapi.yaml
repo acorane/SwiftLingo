@@ -3,20 +3,43 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SwiftLingo - Telegram Mini App translation marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: users
+    description: User management
+  - name: translatorProfiles
+    description: Translator profile management
+  - name: translatorApplications
+    description: Translator applications
+  - name: jobs
+    description: Translation job management
+  - name: bids
+    description: Bid management
+  - name: contracts
+    description: Contract management
+  - name: messages
+    description: Contract chat messages
+  - name: reviews
+    description: Reviews and ratings
+  - name: notifications
+    description: Notifications
+  - name: payments
+    description: Payments and escrow
+  - name: dashboard
+    description: Dashboard aggregates
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +47,722 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/telegram:
+    post:
+      operationId: authenticateTelegram
+      tags: [auth]
+      summary: Authenticate via Telegram Mini App init data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TelegramAuthInput"
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResult"
+        "401":
+          description: Invalid auth data
+
+  /users/me:
+    get:
+      operationId: getMe
+      tags: [users]
+      summary: Get current user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    patch:
+      operationId: updateMe
+      tags: [users]
+      summary: Update current user settings (e.g. preferred language)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{userId}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+
+  /translator-profiles/me:
+    get:
+      operationId: getMyTranslatorProfile
+      tags: [translatorProfiles]
+      summary: Get current user's translator profile
+      responses:
+        "200":
+          description: Translator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslatorProfile"
+        "404":
+          description: No translator profile
+    put:
+      operationId: upsertMyTranslatorProfile
+      tags: [translatorProfiles]
+      summary: Create or update current user's translator profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslatorProfileInput"
+      responses:
+        "200":
+          description: Translator profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslatorProfile"
+
+  /translator-profiles/{userId}:
+    get:
+      operationId: getTranslatorProfile
+      tags: [translatorProfiles]
+      summary: Get a translator profile by user ID
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Translator profile with stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslatorProfileWithStats"
+        "404":
+          description: Not found
+
+  /translator-applications:
+    post:
+      operationId: submitTranslatorApplication
+      tags: [translatorApplications]
+      summary: Submit a translator application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TranslatorApplicationInput"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslatorApplication"
+
+  /translator-applications/me:
+    get:
+      operationId: getMyTranslatorApplication
+      tags: [translatorApplications]
+      summary: Get current user's translator application
+      responses:
+        "200":
+          description: Translator application
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TranslatorApplication"
+        "404":
+          description: No application found
+
+  /jobs:
+    get:
+      operationId: listJobs
+      tags: [jobs]
+      summary: List translation jobs with filtering
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: sourceLang
+          in: query
+          schema:
+            type: string
+        - name: targetLang
+          in: query
+          schema:
+            type: string
+        - name: specialization
+          in: query
+          schema:
+            type: string
+        - name: deliveryType
+          in: query
+          schema:
+            type: string
+        - name: budgetMin
+          in: query
+          schema:
+            type: number
+        - name: budgetMax
+          in: query
+          schema:
+            type: number
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: myJobs
+          in: query
+          schema:
+            type: boolean
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        "200":
+          description: List of jobs
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobListResult"
+    post:
+      operationId: createJob
+      tags: [jobs]
+      summary: Post a new translation job
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobInput"
+      responses:
+        "201":
+          description: Job created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+
+  /jobs/{jobId}:
+    get:
+      operationId: getJob
+      tags: [jobs]
+      summary: Get a job by ID with bids
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Job detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobDetail"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateJob
+      tags: [jobs]
+      summary: Update a job (client only, own jobs)
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JobUpdate"
+      responses:
+        "200":
+          description: Updated job
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Job"
+    delete:
+      operationId: deleteJob
+      tags: [jobs]
+      summary: Delete a job (client only, own open jobs)
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /jobs/{jobId}/bids:
+    get:
+      operationId: listBids
+      tags: [bids]
+      summary: List bids for a job
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of bids
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Bid"
+    post:
+      operationId: submitBid
+      tags: [bids]
+      summary: Submit a bid on a job (approved translators only)
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidInput"
+      responses:
+        "201":
+          description: Bid submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bid"
+
+  /bids/{bidId}:
+    patch:
+      operationId: updateBid
+      tags: [bids]
+      summary: Update a bid (translator only, own bid)
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BidUpdate"
+      responses:
+        "200":
+          description: Updated bid
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Bid"
+    delete:
+      operationId: withdrawBid
+      tags: [bids]
+      summary: Withdraw a bid (translator only)
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Withdrawn
+
+  /bids/{bidId}/accept:
+    post:
+      operationId: acceptBid
+      tags: [bids]
+      summary: Client accepts a bid, creating a contract
+      parameters:
+        - name: bidId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "201":
+          description: Contract created, pending payment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /my-bids:
+    get:
+      operationId: listMyBids
+      tags: [bids]
+      summary: List all bids submitted by current translator
+      responses:
+        "200":
+          description: List of bids with job info
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BidWithJob"
+
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List contracts for current user (as client or translator)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ContractSummary"
+
+  /contracts/{contractId}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get contract detail
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+        "404":
+          description: Not found
+
+  /contracts/{contractId}/deliver:
+    post:
+      operationId: deliverContract
+      tags: [contracts]
+      summary: Translator marks contract as delivered
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeliveryInput"
+      responses:
+        "200":
+          description: Updated contract
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+
+  /contracts/{contractId}/approve:
+    post:
+      operationId: approveDelivery
+      tags: [contracts]
+      summary: Client approves delivery, releasing payment
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+
+  /contracts/{contractId}/dispute:
+    post:
+      operationId: disputeContract
+      tags: [contracts]
+      summary: Raise a dispute on a contract
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeInput"
+      responses:
+        "200":
+          description: Contract in dispute
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ContractDetail"
+
+  /contracts/{contractId}/messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: Get messages for a contract (requires active contract)
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message in a contract chat
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /payments:
+    post:
+      operationId: initiatePayment
+      tags: [payments]
+      summary: Initiate payment for a contract (escrow capture)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentInput"
+      responses:
+        "201":
+          description: Payment initiated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /payments/{contractId}/confirm:
+    post:
+      operationId: confirmPayment
+      tags: [payments]
+      summary: Confirm payment for a contract (activates contract)
+      parameters:
+        - name: contractId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment confirmed, contract activated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payment"
+
+  /reviews:
+    post:
+      operationId: submitReview
+      tags: [reviews]
+      summary: Client submits a review for completed contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewInput"
+      responses:
+        "201":
+          description: Review submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+
+  /reviews/translator/{userId}:
+    get:
+      operationId: listTranslatorReviews
+      tags: [reviews]
+      summary: List reviews for a translator
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of reviews
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: Get current user's notifications
+      parameters:
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: List of notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked read
+
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get dashboard summary for current user
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /marketplace/stats:
+    get:
+      operationId: getMarketplaceStats
+      tags: [dashboard]
+      summary: Get marketplace stats (active jobs, translators, etc.)
+      responses:
+        "200":
+          description: Marketplace stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarketplaceStats"
+
 components:
   schemas:
     HealthStatus:
@@ -31,6 +770,630 @@ components:
       properties:
         status:
           type: string
-      required:
-        - status
+      required: [status]
 
+    TelegramAuthInput:
+      type: object
+      required: [initData]
+      properties:
+        initData:
+          type: string
+          description: Telegram WebApp.initData string
+
+    AuthResult:
+      type: object
+      required: [user, token]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        token:
+          type: string
+
+    User:
+      type: object
+      required: [id, telegramId, role, createdAt]
+      properties:
+        id:
+          type: integer
+        telegramId:
+          type: string
+        username:
+          type: ["string", "null"]
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        profilePhotoUrl:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum: [client, translator, admin]
+        preferredLanguage:
+          type: string
+          enum: [en, uz, ru]
+        isTranslatorApproved:
+          type: boolean
+        createdAt:
+          type: string
+
+    UserUpdate:
+      type: object
+      properties:
+        preferredLanguage:
+          type: string
+          enum: [en, uz, ru]
+        role:
+          type: string
+          enum: [client, translator]
+
+    TranslatorProfile:
+      type: object
+      required: [id, userId, pricePerWord, sourceLanguages, targetLanguages, specializations, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        bio:
+          type: ["string", "null"]
+        certifications:
+          type: ["string", "null"]
+        yearsOfExperience:
+          type: ["integer", "null"]
+        pricePerWord:
+          type: number
+        sourceLanguages:
+          type: array
+          items:
+            type: string
+        targetLanguages:
+          type: array
+          items:
+            type: string
+        specializations:
+          type: array
+          items:
+            type: string
+        rating:
+          type: ["number", "null"]
+        completedJobsCount:
+          type: integer
+        createdAt:
+          type: string
+
+    TranslatorProfileWithStats:
+      allOf:
+        - $ref: "#/components/schemas/TranslatorProfile"
+        - type: object
+          properties:
+            user:
+              $ref: "#/components/schemas/User"
+            recentReviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/Review"
+
+    TranslatorProfileInput:
+      type: object
+      required: [pricePerWord, sourceLanguages, targetLanguages, specializations]
+      properties:
+        bio:
+          type: string
+        certifications:
+          type: string
+        yearsOfExperience:
+          type: integer
+        pricePerWord:
+          type: number
+        sourceLanguages:
+          type: array
+          items:
+            type: string
+        targetLanguages:
+          type: array
+          items:
+            type: string
+        specializations:
+          type: array
+          items:
+            type: string
+
+    TranslatorApplication:
+      type: object
+      required: [id, userId, status, termsAcceptedAt, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        fullName:
+          type: string
+        bio:
+          type: ["string", "null"]
+        certifications:
+          type: ["string", "null"]
+        yearsOfExperience:
+          type: ["integer", "null"]
+        pricePerWord:
+          type: number
+        sourceLanguages:
+          type: array
+          items:
+            type: string
+        targetLanguages:
+          type: array
+          items:
+            type: string
+        specializations:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [draft, pending, approved, rejected]
+        termsAcceptedAt:
+          type: string
+        adminNote:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    TranslatorApplicationInput:
+      type: object
+      required: [fullName, pricePerWord, sourceLanguages, targetLanguages, specializations, acceptTerms]
+      properties:
+        fullName:
+          type: string
+        bio:
+          type: string
+        certifications:
+          type: string
+        yearsOfExperience:
+          type: integer
+        pricePerWord:
+          type: number
+        sourceLanguages:
+          type: array
+          items:
+            type: string
+        targetLanguages:
+          type: array
+          items:
+            type: string
+        specializations:
+          type: array
+          items:
+            type: string
+        acceptTerms:
+          type: boolean
+
+    Job:
+      type: object
+      required: [id, clientId, title, sourceLang, targetLang, status, budgetMin, budgetMax, createdAt]
+      properties:
+        id:
+          type: integer
+        clientId:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        sourceLang:
+          type: string
+        targetLang:
+          type: string
+        wordCount:
+          type: ["integer", "null"]
+        budgetMin:
+          type: number
+        budgetMax:
+          type: number
+        deliveryType:
+          type: string
+          enum: [standard, express, urgent]
+        specialization:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [open, in_progress, completed, cancelled]
+        bidsCount:
+          type: integer
+        createdAt:
+          type: string
+
+    JobListResult:
+      type: object
+      required: [jobs, total]
+      properties:
+        jobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Job"
+        total:
+          type: integer
+
+    JobDetail:
+      allOf:
+        - $ref: "#/components/schemas/Job"
+        - type: object
+          properties:
+            client:
+              $ref: "#/components/schemas/User"
+            bids:
+              type: array
+              items:
+                $ref: "#/components/schemas/Bid"
+
+    JobInput:
+      type: object
+      required: [title, sourceLang, targetLang, budgetMin, budgetMax, deliveryType]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        sourceLang:
+          type: string
+        targetLang:
+          type: string
+        wordCount:
+          type: integer
+        budgetMin:
+          type: number
+        budgetMax:
+          type: number
+        deliveryType:
+          type: string
+          enum: [standard, express, urgent]
+        specialization:
+          type: string
+
+    JobUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        wordCount:
+          type: integer
+        budgetMin:
+          type: number
+        budgetMax:
+          type: number
+        deliveryType:
+          type: string
+          enum: [standard, express, urgent]
+        specialization:
+          type: string
+        status:
+          type: string
+          enum: [open, cancelled]
+
+    Bid:
+      type: object
+      required: [id, jobId, translatorId, amount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        translatorId:
+          type: integer
+        amount:
+          type: number
+        coverLetter:
+          type: ["string", "null"]
+        deliveryDays:
+          type: ["integer", "null"]
+        status:
+          type: string
+          enum: [pending, accepted, rejected, withdrawn]
+        translator:
+          $ref: "#/components/schemas/TranslatorProfile"
+        translatorUser:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    BidWithJob:
+      allOf:
+        - $ref: "#/components/schemas/Bid"
+        - type: object
+          properties:
+            job:
+              $ref: "#/components/schemas/Job"
+
+    BidInput:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+        coverLetter:
+          type: string
+        deliveryDays:
+          type: integer
+
+    BidUpdate:
+      type: object
+      properties:
+        amount:
+          type: number
+        coverLetter:
+          type: string
+        deliveryDays:
+          type: integer
+
+    Contract:
+      type: object
+      required: [id, jobId, clientId, translatorId, agreedPrice, status, paymentStatus, createdAt]
+      properties:
+        id:
+          type: integer
+        jobId:
+          type: integer
+        clientId:
+          type: integer
+        translatorId:
+          type: integer
+        bidId:
+          type: integer
+        agreedPrice:
+          type: number
+        platformFee:
+          type: number
+        translatorPayout:
+          type: number
+        status:
+          type: string
+          enum: [pending_payment, active, delivered, completed, cancelled, disputed]
+        paymentStatus:
+          type: string
+          enum: [pending, confirmed, released, refunded]
+        deliveryNote:
+          type: ["string", "null"]
+        disputeReason:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    ContractSummary:
+      allOf:
+        - $ref: "#/components/schemas/Contract"
+        - type: object
+          properties:
+            job:
+              $ref: "#/components/schemas/Job"
+            client:
+              $ref: "#/components/schemas/User"
+            translator:
+              $ref: "#/components/schemas/User"
+
+    ContractDetail:
+      allOf:
+        - $ref: "#/components/schemas/ContractSummary"
+        - type: object
+          properties:
+            messages:
+              type: array
+              items:
+                $ref: "#/components/schemas/Message"
+            payment:
+              $ref: "#/components/schemas/Payment"
+            review:
+              $ref: "#/components/schemas/Review"
+            statusHistory:
+              type: array
+              items:
+                $ref: "#/components/schemas/ContractStatusHistory"
+
+    DeliveryInput:
+      type: object
+      required: [deliveryNote]
+      properties:
+        deliveryNote:
+          type: string
+
+    DisputeInput:
+      type: object
+      required: [reason]
+      properties:
+        reason:
+          type: string
+
+    Message:
+      type: object
+      required: [id, contractId, senderId, content, createdAt]
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        senderId:
+          type: integer
+        content:
+          type: string
+        fileUrl:
+          type: ["string", "null"]
+        fileType:
+          type: ["string", "null"]
+        sender:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    MessageInput:
+      type: object
+      required: [content]
+      properties:
+        content:
+          type: string
+        fileUrl:
+          type: string
+        fileType:
+          type: string
+
+    Payment:
+      type: object
+      required: [id, contractId, amount, status, createdAt]
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        amount:
+          type: number
+        platformFee:
+          type: number
+        translatorPayout:
+          type: number
+        status:
+          type: string
+          enum: [pending, confirmed, released, refunded]
+        paymentMethod:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        confirmedAt:
+          type: ["string", "null"]
+        releasedAt:
+          type: ["string", "null"]
+
+    PaymentInput:
+      type: object
+      required: [contractId]
+      properties:
+        contractId:
+          type: integer
+        paymentMethod:
+          type: string
+
+    Review:
+      type: object
+      required: [id, contractId, clientId, translatorId, rating, createdAt]
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        clientId:
+          type: integer
+        translatorId:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        feedback:
+          type: ["string", "null"]
+        client:
+          $ref: "#/components/schemas/User"
+        createdAt:
+          type: string
+
+    ReviewInput:
+      type: object
+      required: [contractId, rating]
+      properties:
+        contractId:
+          type: integer
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        feedback:
+          type: string
+
+    Notification:
+      type: object
+      required: [id, userId, type, title, isRead, createdAt]
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [new_bid, bid_accepted, payment_received, contract_activated, new_message, delivery_submitted, delivery_approved, application_submitted, application_approved, application_rejected]
+        title:
+          type: string
+        body:
+          type: ["string", "null"]
+        relatedId:
+          type: ["integer", "null"]
+        relatedType:
+          type: ["string", "null"]
+        isRead:
+          type: boolean
+        createdAt:
+          type: string
+
+    ContractStatusHistory:
+      type: object
+      required: [id, contractId, status, createdAt]
+      properties:
+        id:
+          type: integer
+        contractId:
+          type: integer
+        status:
+          type: string
+        note:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DashboardSummary:
+      type: object
+      required: [activeJobs, activeContracts, completedContracts, unreadNotificationsCount, recentActivity]
+      properties:
+        activeJobs:
+          type: array
+          items:
+            $ref: "#/components/schemas/Job"
+        activeContracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractSummary"
+        completedContracts:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContractSummary"
+        unreadNotificationsCount:
+          type: integer
+        recentActivity:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        pendingBidsCount:
+          type: integer
+        earningsTotal:
+          type: ["number", "null"]
+
+    MarketplaceStats:
+      type: object
+      required: [openJobsCount, approvedTranslatorsCount, completedContractsCount]
+      properties:
+        openJobsCount:
+          type: integer
+        approvedTranslatorsCount:
+          type: integer
+        completedContractsCount:
+          type: integer
+        languagePairStats:
+          type: array
+          items:
+            type: object
+            properties:
+              sourceLang:
+                type: string
+              targetLang:
+                type: string
+              count:
+                type: integer
