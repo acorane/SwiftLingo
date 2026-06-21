@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "@/lib/i18n";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -44,6 +45,7 @@ export default function PostJob() {
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const createJob = useCreateJob();
 
   const form = useForm<FormData>({
@@ -64,10 +66,10 @@ export default function PostJob() {
     try {
       const job = await createJob.mutateAsync({ data: values as any });
       queryClient.invalidateQueries({ queryKey: getListJobsQueryKey({}) });
-      toast({ title: "Job posted", description: "Your job is now live and accepting bids." });
+      toast({ title: t("post_job"), description: "Your job is now live and accepting bids." });
       setLocation(`/jobs/${job.id}`);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to post job", variant: "destructive" });
+      toast({ title: t("error"), description: err.message || "Failed to post job", variant: "destructive" });
     }
   };
 
@@ -77,21 +79,21 @@ export default function PostJob() {
         <Button variant="ghost" size="icon" onClick={() => setLocation("/jobs")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold tracking-tight">Post a Job</h1>
+        <h1 className="text-xl font-bold tracking-tight">{t("post_a_job")}</h1>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Job Details</CardTitle>
+          <CardTitle className="text-base">{t("job_details")}</CardTitle>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField control={form.control} name="title" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Job Title</FormLabel>
+                  <FormLabel>{t("job_title")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Translate legal contract EN→UZ" {...field} data-testid="input-job-title" />
+                    <Input placeholder={t("job_title_placeholder")} {...field} data-testid="input-job-title" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,9 +101,9 @@ export default function PostJob() {
 
               <FormField control={form.control} name="description" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description</FormLabel>
+                  <FormLabel>{t("description")}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Describe what needs to be translated, special requirements, context..." rows={4} {...field} data-testid="input-job-description" />
+                    <Textarea placeholder={t("description_placeholder")} rows={4} {...field} data-testid="input-job-description" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -110,11 +112,11 @@ export default function PostJob() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="sourceLang" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>From</FormLabel>
+                    <FormLabel>{t("from_lang")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-source-lang">
-                          <SelectValue placeholder="Source" />
+                          <SelectValue placeholder={t("from_lang")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -127,11 +129,11 @@ export default function PostJob() {
 
                 <FormField control={form.control} name="targetLang" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>To</FormLabel>
+                    <FormLabel>{t("to_lang")}</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger data-testid="select-target-lang">
-                          <SelectValue placeholder="Target" />
+                          <SelectValue placeholder={t("to_lang")} />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -145,7 +147,7 @@ export default function PostJob() {
 
               <FormField control={form.control} name="wordCount" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Word Count (optional)</FormLabel>
+                  <FormLabel>{t("word_count")}</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="e.g. 1500" {...field} data-testid="input-word-count" />
                   </FormControl>
@@ -156,7 +158,7 @@ export default function PostJob() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="budgetMin" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget Min ($)</FormLabel>
+                    <FormLabel>{t("budget_min")}</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="50" {...field} data-testid="input-budget-min" />
                     </FormControl>
@@ -165,7 +167,7 @@ export default function PostJob() {
                 )} />
                 <FormField control={form.control} name="budgetMax" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Budget Max ($)</FormLabel>
+                    <FormLabel>{t("budget_max")}</FormLabel>
                     <FormControl>
                       <Input type="number" placeholder="200" {...field} data-testid="input-budget-max" />
                     </FormControl>
@@ -176,7 +178,7 @@ export default function PostJob() {
 
               <FormField control={form.control} name="deliveryType" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Delivery Type</FormLabel>
+                  <FormLabel>{t("delivery_type")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-delivery-type">
@@ -184,9 +186,9 @@ export default function PostJob() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="express">Express (faster)</SelectItem>
-                      <SelectItem value="urgent">Urgent (48h)</SelectItem>
+                      <SelectItem value="standard">{t("standard")}</SelectItem>
+                      <SelectItem value="express">{t("express")}</SelectItem>
+                      <SelectItem value="urgent">{t("urgent")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -195,15 +197,15 @@ export default function PostJob() {
 
               <FormField control={form.control} name="specialization" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Specialization (optional)</FormLabel>
+                  <FormLabel>{t("specialization")}</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value ?? ""}>
                     <FormControl>
                       <SelectTrigger data-testid="select-specialization">
-                        <SelectValue placeholder="Any" />
+                        <SelectValue placeholder={t("any")} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Any</SelectItem>
+                      <SelectItem value="">{t("any")}</SelectItem>
                       <SelectItem value="legal">Legal</SelectItem>
                       <SelectItem value="medical">Medical</SelectItem>
                       <SelectItem value="technical">Technical</SelectItem>
@@ -219,7 +221,7 @@ export default function PostJob() {
 
               <Button type="submit" className="w-full" disabled={createJob.isPending} data-testid="button-submit-job">
                 {createJob.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Post Job
+                {t("post_job")}
               </Button>
             </form>
           </Form>

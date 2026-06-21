@@ -1,5 +1,6 @@
 import { useListContracts, getListContractsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,15 +8,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FileText, Clock } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-
-const STATUS_FILTERS = [
-  { value: "", label: "All" },
-  { value: "pending_payment", label: "Awaiting Payment" },
-  { value: "active", label: "Active" },
-  { value: "delivered", label: "Delivered" },
-  { value: "completed", label: "Completed" },
-  { value: "disputed", label: "Disputed" },
-];
 
 const statusBadgeVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
   if (status === "active") return "default";
@@ -30,7 +22,17 @@ function formatDate(iso: string) {
 
 export default function ContractsList() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [statusFilter, setStatusFilter] = useState("");
+
+  const statusFilters = [
+    { value: "", label: t("all") },
+    { value: "pending_payment", label: t("awaiting_payment") },
+    { value: "active", label: t("active") },
+    { value: "delivered", label: t("delivered") },
+    { value: "completed", label: t("completed") },
+    { value: "disputed", label: t("disputed") },
+  ];
 
   const params = statusFilter ? { status: statusFilter } : {};
   const { data: contracts, isLoading } = useListContracts(params, {
@@ -41,11 +43,11 @@ export default function ContractsList() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Contracts</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{t("contracts")}</h1>
 
       {/* Status Filters */}
       <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
-        {STATUS_FILTERS.map(f => (
+        {statusFilters.map(f => (
           <Button
             key={f.value}
             variant={statusFilter === f.value ? "default" : "outline"}
@@ -67,9 +69,9 @@ export default function ContractsList() {
         <Card className="bg-muted/50 border-dashed">
           <CardContent className="p-8 text-center text-muted-foreground flex flex-col items-center">
             <FileText className="h-10 w-10 mb-3 opacity-20" />
-            <p className="font-medium">No contracts yet</p>
+            <p className="font-medium">{t("no_contracts")}</p>
             <p className="text-sm mt-1">
-              {user?.role === "client" ? "Post a job to get started" : "Browse jobs and submit bids"}
+              {user?.role === "client" ? t("no_contracts_hint_client") : t("no_contracts_hint_translator")}
             </p>
           </CardContent>
         </Card>
@@ -84,10 +86,15 @@ export default function ContractsList() {
                   <CardContent className="p-4 space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <p className="font-semibold text-sm leading-tight flex-1 truncate">
-                        {contract.job?.title || "Translation Contract"}
+                        {contract.job?.title || t("contract")}
                       </p>
                       <Badge variant={statusBadgeVariant(contract.status)} className="text-[10px] shrink-0">
-                        {contract.status.replace(/_/g, " ")}
+                        {contract.status === "pending_payment" ? t("awaiting_payment")
+                          : contract.status === "active" ? t("active")
+                          : contract.status === "delivered" ? t("delivered")
+                          : contract.status === "completed" ? t("completed")
+                          : contract.status === "disputed" ? t("disputed")
+                          : contract.status}
                       </Badge>
                     </div>
                     <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -96,7 +103,7 @@ export default function ContractsList() {
                       )}
                       <span className="text-primary font-medium">${contract.agreedPrice}</span>
                       {otherParty && (
-                        <span>{isClient ? "Translator" : "Client"}: {otherParty.firstName || otherParty.username}</span>
+                        <span>{isClient ? t("translator_label") : t("client_label")}: {otherParty.firstName || otherParty.username}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-1 text-xs text-muted-foreground">

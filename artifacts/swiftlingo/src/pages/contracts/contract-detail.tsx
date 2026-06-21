@@ -6,6 +6,7 @@ import {
   getGetContractQueryKey, getListMessagesQueryKey, getListContractsQueryKey
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,7 +18,7 @@ import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Send, Lock, CheckCircle2, AlertCircle, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const statusColor = (s: string) => {
+const statusColor = (s: string): "default" | "secondary" | "destructive" | "outline" => {
   if (s === "active") return "default";
   if (s === "completed") return "secondary";
   if (s === "disputed") return "destructive";
@@ -28,6 +29,7 @@ export default function ContractDetail() {
   const { contractId } = useParams<{ contractId: string }>();
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -71,9 +73,9 @@ export default function ContractDetail() {
       await initiatePayment.mutateAsync({ data: { contractId: Number(contractId) } });
       await confirmPayment.mutateAsync({ contractId: Number(contractId) });
       queryClient.invalidateQueries({ queryKey: getGetContractQueryKey(Number(contractId)) });
-      toast({ title: "Payment confirmed", description: "Contract is now active. Chat is unlocked." });
+      toast({ title: t("payment"), description: t("chat_locked").replace("unlocks once", "confirmed.") });
     } catch (err: any) {
-      toast({ title: "Payment failed", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -84,7 +86,7 @@ export default function ContractDetail() {
       queryClient.invalidateQueries({ queryKey: getListMessagesQueryKey(Number(contractId)) });
       setMessage("");
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -92,10 +94,10 @@ export default function ContractDetail() {
     try {
       await deliverContract.mutateAsync({ contractId: Number(contractId), data: { deliveryNote } });
       queryClient.invalidateQueries({ queryKey: getGetContractQueryKey(Number(contractId)) });
-      toast({ title: "Work delivered", description: "The client will review your work." });
+      toast({ title: t("delivery_submitted") });
       setShowDeliverForm(false);
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -104,20 +106,20 @@ export default function ContractDetail() {
       await approveDelivery.mutateAsync({ contractId: Number(contractId) });
       queryClient.invalidateQueries({ queryKey: getGetContractQueryKey(Number(contractId)) });
       queryClient.invalidateQueries({ queryKey: getListContractsQueryKey({}) });
-      toast({ title: "Delivery approved", description: "Payment released to translator." });
+      toast({ title: t("approve_release") });
       setShowReviewForm(true);
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
   const handleReview = async () => {
     try {
       await submitReview.mutateAsync({ data: { contractId: Number(contractId), rating: reviewRating, feedback: reviewFeedback } });
-      toast({ title: "Review submitted", description: "Thank you for your feedback." });
+      toast({ title: t("submit_review") });
       setShowReviewForm(false);
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -129,7 +131,7 @@ export default function ContractDetail() {
     </div>
   );
 
-  if (!contract) return <div className="text-center text-muted-foreground py-12">Contract not found</div>;
+  if (!contract) return <div className="text-center text-muted-foreground py-12">{t("contract")} not found</div>;
 
   const c = contract as any;
 
@@ -140,10 +142,17 @@ export default function ContractDetail() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground">Contract #{c.id}</p>
-          <h1 className="text-base font-bold truncate" data-testid="text-contract-title">{c.job?.title || "Translation Contract"}</h1>
+          <p className="text-xs text-muted-foreground">{t("contract")} #{c.id}</p>
+          <h1 className="text-base font-bold truncate" data-testid="text-contract-title">{c.job?.title || t("contract")}</h1>
         </div>
-        <Badge variant={statusColor(c.status)} className="shrink-0">{c.status.replace(/_/g, " ")}</Badge>
+        <Badge variant={statusColor(c.status)} className="shrink-0">
+          {c.status === "pending_payment" ? t("awaiting_payment")
+            : c.status === "active" ? t("active")
+            : c.status === "delivered" ? t("delivered")
+            : c.status === "completed" ? t("completed")
+            : c.status === "disputed" ? t("disputed")
+            : c.status}
+        </Badge>
       </div>
 
       {/* Contract Summary */}
@@ -151,30 +160,28 @@ export default function ContractDetail() {
         <CardContent className="p-4 space-y-3">
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground">Agreed Price</p>
+              <p className="text-xs text-muted-foreground">{t("agreed_price")}</p>
               <p className="font-semibold text-primary">${c.agreedPrice}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Your Payout</p>
+              <p className="text-xs text-muted-foreground">{t("your_payout")}</p>
               <p className="font-semibold">${isTranslator ? c.translatorPayout : c.agreedPrice}</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Payment</p>
+              <p className="text-xs text-muted-foreground">{t("payment")}</p>
               <Badge variant={c.paymentStatus === "confirmed" || c.paymentStatus === "released" ? "default" : "outline"} className="text-[10px]">
                 {c.paymentStatus}
               </Badge>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">{isClient ? "Translator" : "Client"}</p>
+              <p className="text-xs text-muted-foreground">{isClient ? t("translator_label") : t("client_label")}</p>
               <p className="text-sm font-medium">
                 {isClient
-                  ? (c.translator?.firstName || c.translator?.username || "Translator")
-                  : (c.client?.firstName || c.client?.username || "Client")}
+                  ? (c.translator?.firstName || c.translator?.username || t("translator_label"))
+                  : (c.client?.firstName || c.client?.username || t("client_label"))}
               </p>
             </div>
           </div>
-
-          {/* Language pair */}
           {c.job && (
             <p className="text-xs text-muted-foreground">
               {c.job.sourceLang?.toUpperCase()} → {c.job.targetLang?.toUpperCase()}
@@ -190,11 +197,10 @@ export default function ContractDetail() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-primary" />
-              <p className="text-sm font-medium">Payment Required</p>
+              <p className="text-sm font-medium">{t("payment_required")}</p>
             </div>
             <p className="text-xs text-muted-foreground">
-              Pay ${c.agreedPrice} to activate the contract and unlock chat with your translator.
-              Platform fee: ${c.platformFee?.toFixed(2)} (10%).
+              {t("chat_locked")}. {t("payment")}: ${c.agreedPrice}. Platform fee: ${c.platformFee?.toFixed(2)}.
             </p>
             <Button
               className="w-full"
@@ -202,7 +208,7 @@ export default function ContractDetail() {
               disabled={initiatePayment.isPending || confirmPayment.isPending}
               data-testid="button-pay-now"
             >
-              {(initiatePayment.isPending || confirmPayment.isPending) ? "Processing..." : `Pay $${c.agreedPrice}`}
+              {(initiatePayment.isPending || confirmPayment.isPending) ? t("processing") : `${t("pay_now")} $${c.agreedPrice}`}
             </Button>
           </CardContent>
         </Card>
@@ -215,7 +221,7 @@ export default function ContractDetail() {
             {showDeliverForm ? (
               <>
                 <Textarea
-                  placeholder="Delivery note (describe what you've done, any important info for the client)..."
+                  placeholder={t("delivery_note_placeholder")}
                   value={deliveryNote}
                   onChange={e => setDeliveryNote(e.target.value)}
                   rows={3}
@@ -223,15 +229,15 @@ export default function ContractDetail() {
                 />
                 <div className="flex gap-2">
                   <Button size="sm" onClick={handleDeliver} disabled={deliverContract.isPending} data-testid="button-deliver">
-                    {deliverContract.isPending ? "Submitting..." : "Submit Delivery"}
+                    {deliverContract.isPending ? t("processing") : t("submit_delivery")}
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setShowDeliverForm(false)}>Cancel</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowDeliverForm(false)}>{t("cancel")}</Button>
                 </div>
               </>
             ) : (
               <Button className="w-full" onClick={() => setShowDeliverForm(true)} data-testid="button-mark-delivered">
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Mark as Delivered
+                {t("mark_delivered")}
               </Button>
             )}
           </CardContent>
@@ -244,21 +250,21 @@ export default function ContractDetail() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <p className="text-sm font-medium">Delivery Submitted</p>
+              <p className="text-sm font-medium">{t("delivery_submitted")}</p>
             </div>
             {c.deliveryNote && <p className="text-xs text-muted-foreground">{c.deliveryNote}</p>}
             <Button className="w-full" onClick={handleApprove} disabled={approveDelivery.isPending} data-testid="button-approve-delivery">
-              {approveDelivery.isPending ? "Approving..." : "Approve & Release Payment"}
+              {approveDelivery.isPending ? t("approving") : t("approve_release")}
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Review form (after approval) */}
+      {/* Review form */}
       {isClient && c.status === "completed" && !c.review && showReviewForm && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Leave a Review</CardTitle>
+            <CardTitle className="text-base">{t("leave_review")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex gap-1">
@@ -269,14 +275,14 @@ export default function ContractDetail() {
               ))}
             </div>
             <Textarea
-              placeholder="Share your experience..."
+              placeholder={t("your_experience")}
               value={reviewFeedback}
               onChange={e => setReviewFeedback(e.target.value)}
               rows={3}
               data-testid="input-review-feedback"
             />
             <Button size="sm" onClick={handleReview} disabled={submitReview.isPending} data-testid="button-submit-review">
-              {submitReview.isPending ? "Submitting..." : "Submit Review"}
+              {submitReview.isPending ? t("processing") : t("submit_review")}
             </Button>
           </CardContent>
         </Card>
@@ -286,7 +292,7 @@ export default function ContractDetail() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="text-base flex items-center gap-2">
-            Chat
+            {t("chat")}
             {!chatEnabled && <Lock className="h-4 w-4 text-muted-foreground" />}
           </CardTitle>
         </CardHeader>
@@ -294,13 +300,13 @@ export default function ContractDetail() {
           {!chatEnabled ? (
             <div className="text-center py-6 text-muted-foreground text-sm">
               <Lock className="h-8 w-8 mx-auto mb-2 opacity-20" />
-              <p>Chat unlocks once payment is confirmed</p>
+              <p>{t("chat_locked")}</p>
             </div>
           ) : (
             <>
               <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
                 {Array.isArray(messages) && (messages as any[]).length === 0 && (
-                  <p className="text-center text-xs text-muted-foreground py-4">No messages yet. Start the conversation.</p>
+                  <p className="text-center text-xs text-muted-foreground py-4">{t("no_messages")}</p>
                 )}
                 {Array.isArray(messages) && (messages as any[]).map((msg: any) => {
                   const isMine = msg.senderId === user?.id;
@@ -309,7 +315,7 @@ export default function ContractDetail() {
                       <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${isMine ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
                         {!isMine && (
                           <p className="text-[10px] font-medium mb-0.5 opacity-70">
-                            {msg.sender?.firstName || msg.sender?.username || "Them"}
+                            {msg.sender?.firstName || msg.sender?.username}
                           </p>
                         )}
                         <p className="text-sm leading-snug">{msg.content}</p>
@@ -325,7 +331,7 @@ export default function ContractDetail() {
               <Separator />
               <div className="flex gap-2">
                 <Input
-                  placeholder="Type a message..."
+                  placeholder={t("type_message")}
                   value={message}
                   onChange={e => setMessage(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }}

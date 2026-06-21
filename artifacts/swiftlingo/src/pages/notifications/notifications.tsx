@@ -1,5 +1,6 @@
 import { useListNotifications, useMarkNotificationRead, useMarkAllNotificationsRead, getListNotificationsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/lib/i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,19 +22,20 @@ const TYPE_ICON: Record<string, any> = {
   application_rejected: Info,
 };
 
-function formatRelativeTime(iso: string) {
+function formatRelativeTime(iso: string, justNowLabel: string) {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return justNowLabel;
+  if (mins < 60) return `${mins}m`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return `${Math.floor(hrs / 24)}d ago`;
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
 export default function Notifications() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const { data: notifications, isLoading } = useListNotifications({}, {
@@ -59,9 +61,9 @@ export default function Notifications() {
     try {
       await markAllRead.mutateAsync();
       queryClient.invalidateQueries({ queryKey: getListNotificationsQueryKey({}) });
-      toast({ title: "All notifications marked as read" });
+      toast({ title: t("mark_all_read") });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -69,8 +71,6 @@ export default function Notifications() {
     if (!n.isRead) handleMarkRead(n.id);
     if (n.relatedType === "contract" && n.relatedId) {
       setLocation(`/contracts/${n.relatedId}`);
-    } else if (n.relatedType === "bid" && n.relatedId) {
-      // Navigate to job
     }
   };
 
@@ -78,7 +78,7 @@ export default function Notifications() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold tracking-tight">Notifications</h1>
+          <h1 className="text-2xl font-bold tracking-tight">{t("notifications")}</h1>
           {unreadCount > 0 && (
             <Badge variant="default" className="text-xs">{unreadCount}</Badge>
           )}
@@ -86,7 +86,7 @@ export default function Notifications() {
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={handleMarkAllRead} data-testid="button-mark-all-read">
             <CheckCheck className="h-4 w-4 mr-1" />
-            Mark all read
+            {t("mark_all_read")}
           </Button>
         )}
       </div>
@@ -99,8 +99,8 @@ export default function Notifications() {
         <Card className="bg-muted/50 border-dashed">
           <CardContent className="p-8 text-center text-muted-foreground flex flex-col items-center">
             <Bell className="h-10 w-10 mb-3 opacity-20" />
-            <p className="font-medium">No notifications</p>
-            <p className="text-sm mt-1">You're all caught up</p>
+            <p className="font-medium">{t("no_notifications")}</p>
+            <p className="text-sm mt-1">{t("all_caught_up")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -123,7 +123,7 @@ export default function Notifications() {
                       {n.title}
                     </p>
                     {n.body && <p className="text-xs text-muted-foreground line-clamp-2">{n.body}</p>}
-                    <p className="text-[10px] text-muted-foreground">{formatRelativeTime(n.createdAt)}</p>
+                    <p className="text-[10px] text-muted-foreground">{formatRelativeTime(n.createdAt, t("just_now"))}</p>
                   </div>
                   {!n.isRead && (
                     <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />

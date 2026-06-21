@@ -1,16 +1,17 @@
 import { useAuth } from "@/lib/auth";
 import { useGetMyTranslatorProfile, useGetMyTranslatorApplication, useListMyBids, useUpdateMe, getGetMeQueryKey, getGetMyTranslatorProfileQueryKey, getGetMyTranslatorApplicationQueryKey, getListMyBidsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link, useLocation } from "wouter";
-import { Star, Briefcase, FileText, ChevronRight, LogOut, UserCog, Clock } from "lucide-react";
+import { Star, Briefcase, ChevronRight, LogOut, UserCog, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-const applicationStatusColor = (status: string) => {
+const applicationStatusColor = (status: string): "default" | "secondary" | "destructive" | "outline" => {
   if (status === "approved") return "default";
   if (status === "rejected") return "destructive";
   return "secondary";
@@ -19,6 +20,7 @@ const applicationStatusColor = (status: string) => {
 export default function Profile() {
   const { user, logout } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
   const updateMe = useUpdateMe();
@@ -49,7 +51,7 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: getGetMeQueryKey() });
       toast({ title: `Switched to ${newRole} mode` });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -60,7 +62,7 @@ export default function Profile() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold tracking-tight">Profile</h1>
+      <h1 className="text-2xl font-bold tracking-tight">{t("profile")}</h1>
 
       {/* User Card */}
       <Card>
@@ -92,7 +94,7 @@ export default function Profile() {
       {user.role === "translator" && !profileLoading && translatorProfile && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Translator Stats</CardTitle>
+            <CardTitle className="text-base">{t("translator_stats")}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-3 gap-4 text-center">
             <div>
@@ -100,18 +102,18 @@ export default function Profile() {
                 {(translatorProfile as any).rating ? (translatorProfile as any).rating.toFixed(1) : "—"}
               </p>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-0.5">
-                <Star className="h-3 w-3" /> Rating
+                <Star className="h-3 w-3" /> {t("rating")}
               </p>
             </div>
             <div>
               <p className="text-2xl font-bold text-primary">{(translatorProfile as any).completedJobsCount ?? 0}</p>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-0.5">
-                <Briefcase className="h-3 w-3" /> Jobs done
+                <Briefcase className="h-3 w-3" /> {t("jobs_done")}
               </p>
             </div>
             <div>
               <p className="text-2xl font-bold text-primary">${(translatorProfile as any).pricePerWord ?? "—"}</p>
-              <p className="text-xs text-muted-foreground">per word</p>
+              <p className="text-xs text-muted-foreground">{t("per_word")}</p>
             </div>
           </CardContent>
         </Card>
@@ -121,18 +123,18 @@ export default function Profile() {
       {user.role === "translator" && Array.isArray(myBids) && (myBids as any[]).length > 0 && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">My Bids</CardTitle>
+            <CardTitle className="text-base">{t("my_bids")}</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 gap-4 text-center">
             <div>
               <p className="text-2xl font-bold">{pendingBids.length}</p>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
-                <Clock className="h-3 w-3" /> Pending
+                <Clock className="h-3 w-3" /> {t("pending")}
               </p>
             </div>
             <div>
               <p className="text-2xl font-bold text-primary">{acceptedBids.length}</p>
-              <p className="text-xs text-muted-foreground">Accepted</p>
+              <p className="text-xs text-muted-foreground">{t("accepted")}</p>
             </div>
           </CardContent>
         </Card>
@@ -146,8 +148,8 @@ export default function Profile() {
               <Link href="/profile/translator-apply">
                 <div className="flex items-center justify-between cursor-pointer" data-testid="link-apply-translator">
                   <div>
-                    <p className="text-sm font-medium">Apply as Translator</p>
-                    <p className="text-xs text-muted-foreground">Complete your application to start bidding</p>
+                    <p className="text-sm font-medium">{t("apply_as_translator")}</p>
+                    <p className="text-xs text-muted-foreground">{t("apply_hint")}</p>
                   </div>
                   <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -155,11 +157,13 @@ export default function Profile() {
             ) : (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium">Translator Application</p>
+                  <p className="text-sm font-medium">{t("translator_application")}</p>
                   <p className="text-xs text-muted-foreground">{(application as any).fullName}</p>
                 </div>
                 <Badge variant={applicationStatusColor((application as any).status)} className="text-[10px]">
-                  {(application as any).status}
+                  {(application as any).status === "pending" ? t("pending")
+                    : (application as any).status === "approved" ? t("accepted")
+                    : (application as any).status}
                 </Badge>
               </div>
             )}
@@ -178,7 +182,7 @@ export default function Profile() {
           >
             <span className="flex items-center gap-2">
               <UserCog className="h-4 w-4" />
-              Become a Translator
+              {t("become_translator")}
             </span>
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -191,7 +195,7 @@ export default function Profile() {
           data-testid="button-logout"
         >
           <LogOut className="h-4 w-4 mr-2" />
-          Log Out
+          {t("logout")}
         </Button>
       </div>
     </div>

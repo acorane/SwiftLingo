@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useParams, useLocation } from "wouter";
 import {
-  useGetJob, useListBids, useSubmitBid, useUpdateBid, useWithdrawBid, useAcceptBid,
+  useGetJob, useListBids, useSubmitBid, useWithdrawBid, useAcceptBid,
   getGetJobQueryKey, getListBidsQueryKey, getListJobsQueryKey
 } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Globe, Clock, Star, ChevronRight, Lock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useForm } from "react-hook-form";
@@ -21,6 +21,7 @@ export default function JobDetail() {
   const { jobId } = useParams<{ jobId: string }>();
   const [, setLocation] = useLocation();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showBidForm, setShowBidForm] = useState(false);
@@ -56,11 +57,11 @@ export default function JobDetail() {
       });
       queryClient.invalidateQueries({ queryKey: getListBidsQueryKey(Number(jobId)) });
       queryClient.invalidateQueries({ queryKey: getGetJobQueryKey(Number(jobId)) });
-      toast({ title: "Bid submitted", description: "Your bid is now visible to the client." });
+      toast({ title: t("submit_bid") });
       setShowBidForm(false);
       bidForm.reset();
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -69,10 +70,10 @@ export default function JobDetail() {
       await acceptBid.mutateAsync({ bidId });
       queryClient.invalidateQueries({ queryKey: getGetJobQueryKey(Number(jobId)) });
       queryClient.invalidateQueries({ queryKey: getListJobsQueryKey({}) });
-      toast({ title: "Bid accepted", description: "A contract has been created. Please complete payment." });
+      toast({ title: t("accept_bid") });
       setLocation("/contracts");
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -81,9 +82,9 @@ export default function JobDetail() {
     try {
       await withdrawBid.mutateAsync({ bidId: myBid.id });
       queryClient.invalidateQueries({ queryKey: getListBidsQueryKey(Number(jobId)) });
-      toast({ title: "Bid withdrawn" });
+      toast({ title: t("withdraw_bid") });
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err.message, variant: "destructive" });
     }
   };
 
@@ -119,7 +120,7 @@ export default function JobDetail() {
               <Globe className="h-3.5 w-3.5" />
               {(job as any).sourceLang?.toUpperCase()} → {(job as any).targetLang?.toUpperCase()}
             </span>
-            {(job as any).wordCount && <span>{(job as any).wordCount.toLocaleString()} words</span>}
+            {(job as any).wordCount && <span>{(job as any).wordCount.toLocaleString()} {t("words")}</span>}
             <span className="flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
               {(job as any).deliveryType}
@@ -133,8 +134,8 @@ export default function JobDetail() {
             <p className="text-sm text-muted-foreground leading-relaxed">{(job as any).description}</p>
           )}
           <div className="text-xs text-muted-foreground">
-            Posted by {(job as any).client?.firstName || (job as any).client?.username || "Client"}
-            {" · "}{(job as any).bidsCount} bid{(job as any).bidsCount !== 1 ? "s" : ""}
+            {t("posted_by")} {(job as any).client?.firstName || (job as any).client?.username || t("client_label")}
+            {" · "}{(job as any).bidsCount} {t("bids_count")}
           </div>
         </CardContent>
       </Card>
@@ -143,13 +144,13 @@ export default function JobDetail() {
       {isTranslator && (job as any).status === "open" && (
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Your Bid</CardTitle>
+            <CardTitle className="text-base">{t("your_bid")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {myBid ? (
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">Your bid: <span className="text-primary">${myBid.amount}</span></span>
+                  <span className="text-sm font-medium">{t("your_bid")}: <span className="text-primary">${myBid.amount}</span></span>
                   <Badge variant={myBid.status === "pending" ? "secondary" : myBid.status === "accepted" ? "default" : "destructive"}>
                     {myBid.status}
                   </Badge>
@@ -157,7 +158,7 @@ export default function JobDetail() {
                 {myBid.coverLetter && <p className="text-sm text-muted-foreground">{myBid.coverLetter}</p>}
                 {myBid.status === "pending" && (
                   <Button variant="outline" size="sm" onClick={handleWithdraw} disabled={withdrawBid.isPending} data-testid="button-withdraw-bid">
-                    Withdraw Bid
+                    {t("withdraw_bid")}
                   </Button>
                 )}
               </div>
@@ -165,28 +166,28 @@ export default function JobDetail() {
               <form onSubmit={bidForm.handleSubmit(handleBidSubmit)} className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xs text-muted-foreground">Your Price ($)</label>
+                    <label className="text-xs text-muted-foreground">{t("your_price")}</label>
                     <Input type="number" step="0.01" placeholder="e.g. 120" {...bidForm.register("amount", { required: true })} data-testid="input-bid-amount" />
                   </div>
                   <div>
-                    <label className="text-xs text-muted-foreground">Days to Deliver</label>
+                    <label className="text-xs text-muted-foreground">{t("days_to_deliver")}</label>
                     <Input type="number" placeholder="e.g. 3" {...bidForm.register("deliveryDays")} data-testid="input-delivery-days" />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Cover Letter</label>
-                  <Textarea placeholder="Introduce yourself and explain why you're the best choice..." rows={3} {...bidForm.register("coverLetter")} data-testid="input-cover-letter" />
+                  <label className="text-xs text-muted-foreground">{t("cover_letter")}</label>
+                  <Textarea placeholder={t("cover_letter_placeholder")} rows={3} {...bidForm.register("coverLetter")} data-testid="input-cover-letter" />
                 </div>
                 <div className="flex gap-2">
                   <Button type="submit" size="sm" disabled={submitBid.isPending} data-testid="button-submit-bid">
-                    {submitBid.isPending ? "Submitting..." : "Submit Bid"}
+                    {submitBid.isPending ? t("submitting") : t("submit_bid")}
                   </Button>
-                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowBidForm(false)}>Cancel</Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowBidForm(false)}>{t("cancel")}</Button>
                 </div>
               </form>
             ) : (
               <Button onClick={() => setShowBidForm(true)} className="w-full" data-testid="button-place-bid">
-                Place a Bid
+                {t("place_bid")}
               </Button>
             )}
           </CardContent>
@@ -198,20 +199,20 @@ export default function JobDetail() {
         <Card className="border-dashed">
           <CardContent className="p-4 flex items-center gap-3 text-sm text-muted-foreground">
             <Lock className="h-5 w-5 shrink-0" />
-            <span>Your translator application is under review. You can bid once approved.</span>
+            <span>{t("pending_approval")}</span>
           </CardContent>
         </Card>
       )}
 
-      {/* Bids section (visible to client who owns the job, or all for overview) */}
+      {/* Bids section */}
       <div className="space-y-3">
         <h2 className="text-base font-semibold">
-          Bids ({Array.isArray(bids) ? (bids as any[]).length : 0})
+          {Array.isArray(bids) ? (bids as any[]).length : 0} {t("bids_count")}
         </h2>
         {bidsLoading ? (
           <Skeleton className="h-20 w-full" />
         ) : !Array.isArray(bids) || (bids as any[]).length === 0 ? (
-          <p className="text-sm text-muted-foreground">No bids yet.</p>
+          <p className="text-sm text-muted-foreground">{t("no_bids_yet")}</p>
         ) : (
           <div className="space-y-3">
             {(bids as any[]).map((bid: any) => (
@@ -220,18 +221,18 @@ export default function JobDetail() {
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm font-medium">
-                        {bid.translatorUser?.firstName || bid.translatorUser?.username || "Translator"}
+                        {bid.translatorUser?.firstName || bid.translatorUser?.username || t("translator_label")}
                       </p>
                       {bid.translator?.rating && (
                         <span className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                          {bid.translator.rating.toFixed(1)} · {bid.translator.completedJobsCount} jobs
+                          {bid.translator.rating.toFixed(1)} · {bid.translator.completedJobsCount} {t("jobs_done")}
                         </span>
                       )}
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-primary">${bid.amount}</p>
-                      {bid.deliveryDays && <p className="text-xs text-muted-foreground">{bid.deliveryDays}d delivery</p>}
+                      {bid.deliveryDays && <p className="text-xs text-muted-foreground">{bid.deliveryDays}d</p>}
                     </div>
                   </div>
                   {bid.coverLetter && (
@@ -245,7 +246,7 @@ export default function JobDetail() {
                       disabled={acceptBid.isPending}
                       data-testid={`button-accept-bid-${bid.id}`}
                     >
-                      Accept This Bid <ChevronRight className="h-3 w-3 ml-1" />
+                      {t("accept_bid")} <ChevronRight className="h-3 w-3 ml-1" />
                     </Button>
                   )}
                   {bid.status !== "pending" && (

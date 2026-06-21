@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useListJobs, getListJobsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
+import { useTranslation } from "@/lib/i18n";
 import { Link, useLocation } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,23 +24,7 @@ const LANGUAGES = [
   { value: "ja", label: "Japanese" },
 ];
 
-const DELIVERY_TYPES = [
-  { value: "standard", label: "Standard" },
-  { value: "express", label: "Express" },
-  { value: "urgent", label: "Urgent" },
-];
-
-const SPECIALIZATIONS = [
-  { value: "legal", label: "Legal" },
-  { value: "medical", label: "Medical" },
-  { value: "technical", label: "Technical" },
-  { value: "financial", label: "Financial" },
-  { value: "marketing", label: "Marketing" },
-  { value: "literary", label: "Literary" },
-  { value: "general", label: "General" },
-];
-
-const deliveryBadgeColor = (type: string) => {
+const deliveryBadgeColor = (type: string): "default" | "secondary" | "destructive" | "outline" => {
   if (type === "urgent") return "destructive";
   if (type === "express") return "secondary";
   return "outline";
@@ -47,6 +32,7 @@ const deliveryBadgeColor = (type: string) => {
 
 export default function JobsList() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
   const [sourceLang, setSourceLang] = useState("");
@@ -80,10 +66,10 @@ export default function JobsList() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Jobs</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t("jobs")}</h1>
         {user?.role === "client" && (
           <Button size="sm" onClick={() => setLocation("/jobs/new")} data-testid="button-post-job">
-            <Plus className="h-4 w-4 mr-1" /> Post Job
+            <Plus className="h-4 w-4 mr-1" /> {t("post_job")}
           </Button>
         )}
       </div>
@@ -94,7 +80,7 @@ export default function JobsList() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             className="pl-9"
-            placeholder="Search jobs..."
+            placeholder={t("search_jobs")}
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
             data-testid="input-search-jobs"
@@ -103,29 +89,31 @@ export default function JobsList() {
         <div className="grid grid-cols-3 gap-2">
           <Select value={sourceLang} onValueChange={setSourceLang}>
             <SelectTrigger className="text-xs h-8" data-testid="select-source-lang">
-              <SelectValue placeholder="From" />
+              <SelectValue placeholder={t("from_lang")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Any</SelectItem>
+              <SelectItem value="__all__">{t("any")}</SelectItem>
               {LANGUAGES.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={targetLang} onValueChange={setTargetLang}>
             <SelectTrigger className="text-xs h-8" data-testid="select-target-lang">
-              <SelectValue placeholder="To" />
+              <SelectValue placeholder={t("to_lang")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Any</SelectItem>
+              <SelectItem value="__all__">{t("any")}</SelectItem>
               {LANGUAGES.map(l => <SelectItem key={l.value} value={l.value}>{l.label}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={deliveryType} onValueChange={setDeliveryType}>
             <SelectTrigger className="text-xs h-8" data-testid="select-delivery-type">
-              <SelectValue placeholder="Type" />
+              <SelectValue placeholder={t("type")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">Any</SelectItem>
-              {DELIVERY_TYPES.map(d => <SelectItem key={d.value} value={d.value}>{d.label}</SelectItem>)}
+              <SelectItem value="__all__">{t("any")}</SelectItem>
+              <SelectItem value="standard">{t("standard")}</SelectItem>
+              <SelectItem value="express">{t("express")}</SelectItem>
+              <SelectItem value="urgent">{t("urgent")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -137,7 +125,7 @@ export default function JobsList() {
             onClick={() => setMyJobs(!myJobs)}
             data-testid="button-my-jobs"
           >
-            My Jobs Only
+            {t("my_jobs_only")}
           </Button>
         )}
       </div>
@@ -151,8 +139,8 @@ export default function JobsList() {
         <Card className="bg-muted/50 border-dashed">
           <CardContent className="p-8 text-center text-muted-foreground flex flex-col items-center">
             <Briefcase className="h-10 w-10 mb-3 opacity-20" />
-            <p className="font-medium">No jobs found</p>
-            <p className="text-sm mt-1">Try adjusting your filters</p>
+            <p className="font-medium">{t("no_jobs_found")}</p>
+            <p className="text-sm mt-1">{t("adjust_filters")}</p>
           </CardContent>
         </Card>
       ) : (
@@ -173,7 +161,7 @@ export default function JobsList() {
                       {job.sourceLang?.toUpperCase()} → {job.targetLang?.toUpperCase()}
                     </span>
                     {job.wordCount && (
-                      <span>{job.wordCount.toLocaleString()} words</span>
+                      <span>{job.wordCount.toLocaleString()} {t("words")}</span>
                     )}
                     {job.specialization && (
                       <Badge variant="outline" className="text-[10px] px-1 py-0">{job.specialization}</Badge>
@@ -185,7 +173,7 @@ export default function JobsList() {
                     </span>
                     <span className="text-xs text-muted-foreground flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      {job.bidsCount} bid{job.bidsCount !== 1 ? "s" : ""}
+                      {job.bidsCount} {t("bids_count")}
                     </span>
                   </div>
                 </CardContent>

@@ -1,7 +1,7 @@
 import { useGetDashboard, getGetDashboardQueryKey } from "@workspace/api-client-react";
 import { useTranslation } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { PlusCircle, Search, FileText, CheckCircle2 } from "lucide-react";
@@ -40,10 +40,10 @@ export default function Home() {
     <div className="space-y-6">
       <div className="flex flex-col space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">
-          Hello, {user?.firstName || user?.username || 'User'}
+          {user?.firstName || user?.username || 'User'}
         </h1>
         <p className="text-muted-foreground text-sm">
-          {isClient ? "Manage your translation projects" : "Find translation jobs"}
+          {isClient ? t("manage_projects") : t("find_jobs")}
         </p>
       </div>
 
@@ -79,11 +79,11 @@ export default function Home() {
         </Link>
       </div>
 
-      {/* Active Jobs/Contracts summary */}
+      {/* Active Contracts summary */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold tracking-tight">Active Contracts</h2>
-          <Link href="/contracts" className="text-sm text-primary font-medium">View all</Link>
+          <h2 className="text-lg font-semibold tracking-tight">{t("active_contracts")}</h2>
+          <Link href="/contracts" className="text-sm text-primary font-medium">{t("view_all")}</Link>
         </div>
         
         {dashboard?.activeContracts && dashboard.activeContracts.length > 0 ? (
@@ -94,7 +94,7 @@ export default function Home() {
                   <CardContent className="p-4 flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none truncate max-w-[200px]">
-                        {contract.job?.title || "Untitled Job"}
+                        {contract.job?.title || t("contract")}
                       </p>
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Badge variant="outline" className="text-[10px] px-1 py-0">{contract.status.replace('_', ' ')}</Badge>
@@ -111,21 +111,20 @@ export default function Home() {
           <Card className="bg-muted/50 border-dashed">
             <CardContent className="p-6 text-center text-sm text-muted-foreground flex flex-col items-center">
               <FileText className="h-8 w-8 mb-2 opacity-20" />
-              <p>No active contracts.</p>
+              <p>{t("no_active_contracts")}</p>
               {isClient ? (
                 <Button variant="link" className="mt-2 text-primary p-0" asChild>
-                  <Link href="/jobs/new">Post a job to get started</Link>
+                  <Link href="/jobs/new">{t("post_to_start")}</Link>
                 </Button>
               ) : (
                 <Button variant="link" className="mt-2 text-primary p-0" asChild>
-                  <Link href="/jobs">Browse available jobs</Link>
+                  <Link href="/jobs">{t("browse_to_start")}</Link>
                 </Button>
               )}
             </CardContent>
           </Card>
         )}
       </div>
-
     </div>
   );
 }

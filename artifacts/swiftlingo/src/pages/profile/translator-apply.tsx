@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { useLocation } from "wouter";
-import { useGetMyTranslatorApplication, useSubmitTranslatorApplication, getGetMyTranslatorApplicationQueryKey } from "@workspace/api-client-react";
+import { useGetMyTranslatorApplication, useSubmitTranslatorApplication } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "@/lib/i18n";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,7 @@ type FormData = z.infer<typeof schema>;
 export default function TranslatorApply() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const submitApplication = useSubmitTranslatorApplication();
 
@@ -80,10 +81,10 @@ export default function TranslatorApply() {
     try {
       await submitApplication.mutateAsync({ data: values as any });
       queryClient.invalidateQueries({ queryKey: ["my-translator-application"] });
-      toast({ title: "Application submitted", description: "We'll review your application and get back to you." });
+      toast({ title: t("submit_application") });
       setLocation("/profile");
     } catch (err: any) {
-      toast({ title: "Error", description: err?.data?.error || err.message, variant: "destructive" });
+      toast({ title: t("error"), description: err?.data?.error || err.message, variant: "destructive" });
     }
   };
 
@@ -97,7 +98,7 @@ export default function TranslatorApply() {
           <Button variant="ghost" size="icon" onClick={() => setLocation("/profile")} data-testid="button-back">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-xl font-bold">Application Status</h1>
+          <h1 className="text-xl font-bold">{t("application_status")}</h1>
         </div>
         <Card>
           <CardContent className="p-6 text-center space-y-4">
@@ -105,8 +106,8 @@ export default function TranslatorApply() {
               <>
                 <Clock className="h-12 w-12 mx-auto text-muted-foreground opacity-40" />
                 <div>
-                  <p className="font-semibold text-lg">Under Review</p>
-                  <p className="text-sm text-muted-foreground mt-1">Your application is being reviewed. We'll notify you once it's processed.</p>
+                  <p className="font-semibold text-lg">{t("under_review")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("under_review_desc")}</p>
                 </div>
               </>
             )}
@@ -114,10 +115,10 @@ export default function TranslatorApply() {
               <>
                 <CheckCircle2 className="h-12 w-12 mx-auto text-green-600" />
                 <div>
-                  <p className="font-semibold text-lg text-green-600">Application Approved</p>
-                  <p className="text-sm text-muted-foreground mt-1">You are now a verified translator. Start bidding on jobs!</p>
+                  <p className="font-semibold text-lg text-green-600">{t("application_approved")}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t("application_approved_desc")}</p>
                 </div>
-                <Button onClick={() => setLocation("/jobs")} data-testid="button-browse-jobs">Browse Jobs</Button>
+                <Button onClick={() => setLocation("/jobs")} data-testid="button-browse-jobs">{t("browse_jobs_btn")}</Button>
               </>
             )}
             {app.status === "rejected" && (
@@ -126,13 +127,13 @@ export default function TranslatorApply() {
                   <span className="text-2xl">!</span>
                 </div>
                 <div>
-                  <p className="font-semibold text-lg">Application Rejected</p>
+                  <p className="font-semibold text-lg">{t("application_rejected")}</p>
                   {app.adminNote && <p className="text-sm text-muted-foreground mt-1">{app.adminNote}</p>}
                 </div>
               </>
             )}
             <Badge variant={app.status === "approved" ? "default" : app.status === "rejected" ? "destructive" : "secondary"}>
-              {app.status}
+              {app.status === "pending" ? t("under_review") : app.status === "approved" ? t("application_approved") : t("application_rejected")}
             </Badge>
           </CardContent>
         </Card>
@@ -150,29 +151,29 @@ export default function TranslatorApply() {
         <Button variant="ghost" size="icon" onClick={() => setLocation("/profile")} data-testid="button-back">
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h1 className="text-xl font-bold">Apply as Translator</h1>
+        <h1 className="text-xl font-bold">{t("apply_as_translator")}</h1>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Personal Information</CardTitle>
+              <CardTitle className="text-base">{t("personal_info")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField control={form.control} name="fullName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
-                  <FormControl><Input placeholder="Your legal name" {...field} data-testid="input-full-name" /></FormControl>
+                  <FormLabel>{t("full_name")}</FormLabel>
+                  <FormControl><Input placeholder={t("full_name_placeholder")} {...field} data-testid="input-full-name" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
 
               <FormField control={form.control} name="bio" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Professional Bio</FormLabel>
+                  <FormLabel>{t("professional_bio")}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Tell clients about your experience, background, and what makes you a great translator..." rows={4} {...field} data-testid="input-bio" />
+                    <Textarea placeholder={t("bio_placeholder")} rows={4} {...field} data-testid="input-bio" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -181,14 +182,14 @@ export default function TranslatorApply() {
               <div className="grid grid-cols-2 gap-3">
                 <FormField control={form.control} name="yearsOfExperience" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Years of Experience</FormLabel>
+                    <FormLabel>{t("years_experience")}</FormLabel>
                     <FormControl><Input type="number" min={0} {...field} data-testid="input-years-exp" /></FormControl>
                     <FormMessage />
                   </FormItem>
                 )} />
                 <FormField control={form.control} name="pricePerWord" render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rate ($/word)</FormLabel>
+                    <FormLabel>{t("rate_per_word")}</FormLabel>
                     <FormControl><Input type="number" step="0.001" min={0} {...field} data-testid="input-price-per-word" /></FormControl>
                     <FormMessage />
                   </FormItem>
@@ -197,8 +198,8 @@ export default function TranslatorApply() {
 
               <FormField control={form.control} name="certifications" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Certifications (optional)</FormLabel>
-                  <FormControl><Input placeholder="e.g. ATA Certified, ISO 17100..." {...field} data-testid="input-certifications" /></FormControl>
+                  <FormLabel>{t("certifications")}</FormLabel>
+                  <FormControl><Input placeholder={t("certifications_placeholder")} {...field} data-testid="input-certifications" /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
@@ -207,12 +208,11 @@ export default function TranslatorApply() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Languages</CardTitle>
-              <CardDescription className="text-xs">Select your working language pairs</CardDescription>
+              <CardTitle className="text-base">{t("languages")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <FormLabel className="text-sm">Source Languages (I translate FROM)</FormLabel>
+                <FormLabel className="text-sm">{t("source_languages")}</FormLabel>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {LANGUAGES.map(lang => (
                     <button
@@ -232,7 +232,7 @@ export default function TranslatorApply() {
               </div>
 
               <div>
-                <FormLabel className="text-sm">Target Languages (I translate INTO)</FormLabel>
+                <FormLabel className="text-sm">{t("target_languages")}</FormLabel>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {LANGUAGES.map(lang => (
                     <button
@@ -255,7 +255,7 @@ export default function TranslatorApply() {
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Specializations</CardTitle>
+              <CardTitle className="text-base">{t("specializations")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
@@ -277,15 +277,10 @@ export default function TranslatorApply() {
             </CardContent>
           </Card>
 
-          {/* Terms */}
           <Card>
             <CardContent className="p-4">
               <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  By submitting this application you agree to SwiftLingo's Terms of Service,
-                  including our 10% platform fee on completed jobs, content guidelines,
-                  and dispute resolution process.
-                </p>
+                <p className="text-sm text-muted-foreground">{t("terms_text")}</p>
                 <FormField control={form.control} name="acceptTerms" render={({ field }) => (
                   <FormItem>
                     <div className="flex items-center gap-3">
@@ -298,7 +293,7 @@ export default function TranslatorApply() {
                         />
                       </FormControl>
                       <Label htmlFor="terms" className="text-sm cursor-pointer">
-                        I accept the Terms and Conditions
+                        {t("accept_terms")}
                       </Label>
                     </div>
                     <FormMessage />
@@ -309,7 +304,7 @@ export default function TranslatorApply() {
           </Card>
 
           <Button type="submit" className="w-full" disabled={submitApplication.isPending} data-testid="button-submit-application">
-            {submitApplication.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Submitting...</> : "Submit Application"}
+            {submitApplication.isPending ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t("loading")}</> : t("submit_application")}
           </Button>
         </form>
       </Form>
